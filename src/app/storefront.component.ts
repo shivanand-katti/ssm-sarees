@@ -12,6 +12,7 @@ type Saree = {
   image: string;
   tone: string;
   slug?: string;
+  productId?: string;
 };
 
 type ApiProduct = {
@@ -158,6 +159,7 @@ export class StorefrontComponent implements OnInit {
         if (Array.isArray(response.items) && response.items.length) {
           this.sarees = response.items.map((product, index) => ({
             id: index + 1,
+            productId: product._id,
             slug: product.slug,
             name: product.name,
             category: product.category,

@@ -103,13 +103,19 @@ router.post('/verify-payment', async (req, res, next) => {
     if (supplied.length !== expectedBuffer.length || !crypto.timingSafeEqual(supplied, expectedBuffer)) {
       return res.status(400).json({ error: 'Payment signature could not be verified' });
     }
-    const order = await Order.findOne({ paymentProviderOrderId: providerOrderId });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    if (order.status === 'paid') return res.json({ success: true, orderNumber: order.orderNumber, status: order.status });
-    order.status = 'paid';
-    order.paymentId = paymentId;
-    order.paidAt = new Date();
-    await order.save();
+    const order = await Order.findOneAndUpdate(
+      { paymentProviderOrderId: providerOrderId, status: 'pending' },
+      { $set: { status: 'paid', paymentId, paidAt: new Date() } },
+      { new: true }
+    );
+    if (!order) {
+      const existing = await Order.findOne({ paymentProviderOrderId: providerOrderId });
+      if (!existing) return res.status(404).json({ error: 'Order not found' });
+      if (existing.status === 'paid' && existing.paymentId === paymentId) {
+        return res.json({ success: true, orderNumber: existing.orderNumber, status: existing.status });
+      }
+      return res.status(409).json({ error: 'Order is not in a payable state' });
+    }
 
     for (const item of order.items) {
       const updated = await Product.updateOne(

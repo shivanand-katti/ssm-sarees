@@ -83,4 +83,35 @@ router.delete('/:id', async (req, res, next) => {
   } catch (error) { return next(error); }
 });
 
+router.get('/orders', async (req, res, next) => {
+  try {
+    const Order = (await import('../models/Order.js')).default;
+    const status = typeof req.query.status === 'string' ? req.query.status : '';
+    const allowed = ['pending', 'paid', 'payment_failed', 'cancelled'];
+    const filter = status && allowed.includes(status) ? { status } : {};
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 25));
+    const [items, total] = await Promise.all([
+      Order.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Order.countDocuments(filter)
+    ]);
+    return res.json({ items, page, limit, total, pages: Math.ceil(total / limit) });
+  } catch (error) { return next(error); }
+});
+
+router.patch('/orders/:id/status', async (req, res, next) => {
+  try {
+    const allowed = ['cancelled'];
+    if (!allowed.includes(req.body?.status)) return res.status(400).json({ error: 'Only cancellation is supported from the admin panel for now' });
+    const Order = (await import('../models/Order.js')).default;
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, status: 'pending' },
+      { $set: { status: 'cancelled' } },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ error: 'Pending order not found' });
+    return res.json({ success: true, orderNumber: order.orderNumber, status: order.status });
+  } catch (error) { return next(error); }
+});
+
 export default router;

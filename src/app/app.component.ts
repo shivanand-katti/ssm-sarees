@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { HttpClient, HttpClientModule, HttpParams } from '@angular/common/http';
+import { environment } from '../environments/environment';
 
 type Saree = {
   id: number;
@@ -9,12 +11,24 @@ type Saree = {
   tag: string;
   image: string;
   tone: string;
+  slug?: string;
+};
+
+type ApiProduct = {
+  _id: string;
+  name: string;
+  slug: string;
+  category: string;
+  price: number;
+  imageUrl?: string;
+  description?: string;
+  featured?: boolean;
 };
 
 @Component({
   selector: 'ssm-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   template: `
     <div class="announcement">A little tradition, a lot of elegance <span>✦</span> Thoughtfully curated sarees</div>
     <header class="site-header">
@@ -60,8 +74,10 @@ type Saree = {
           <div><p class="eyebrow">FIND YOUR FOREVER SAREE</p><h2>Curated <i>collections</i></h2></div>
           <p>From everyday grace to once-in-a-lifetime celebrations, find the weave that feels like you.</p>
         </div>
+        <div class="catalogue-status" *ngIf="loadingProducts">Loading the collection…</div>
+        <div class="catalogue-status error" *ngIf="catalogueError">{{ catalogueError }}</div>
         <div class="filter-row" aria-label="Filter sarees">
-          <button *ngFor="let category of categories" [class.active]="activeCategory === category" (click)="activeCategory = category">{{ category }}</button>
+          <button *ngFor="let category of categories" [class.active]="activeCategory === category" (click)="selectCategory(category)">{{ category }}</button>
           <span class="result-count">{{ filteredSarees.length }} styles</span>
         </div>
         <div class="product-grid">
@@ -76,7 +92,7 @@ type Saree = {
             <div class="product-bottom"><span class="price">₹{{ saree.price | number:'1.0-0' }}</span><button (click)="addToBag(saree)">Add to bag <span>↗</span></button></div>
           </article>
         </div>
-        <p class="catalogue-note">A preview collection — product names, prices and imagery are sample content while the store is being built.</p>
+        <p class="catalogue-note" *ngIf="!apiConnected">Showing the preview catalogue until the product API is configured.</p>
       </section>
 
       <section class="story-band" id="story">
@@ -105,16 +121,20 @@ type Saree = {
     <div class="toast" *ngIf="toast">{{ toast }}</div>
   `
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   menuOpen = false;
   showBag = false;
   subscribed = false;
   toast = '';
   checkoutMessage = '';
   activeCategory = 'All sarees';
+  loadingProducts = false;
+  apiConnected = false;
+  catalogueError = '';
+  private readonly apiBase = environment.apiBaseUrl;
   cart: Saree[] = [];
   currentYear = new Date().getFullYear();
-  categories = ['All sarees', 'Silk', 'Festive', 'Everyday'];
+  categories = ['All sarees', 'Silk', 'Festive', 'Everyday', 'Cotton', 'Designer'];
   sarees: Saree[] = [
     { id: 1, name: 'The Gulmohar Silk', category: 'Silk', price: 4299, tag: 'BESTSELLER', tone: '#e8d8c8', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=85' },
     { id: 2, name: 'The Marigold Edit', category: 'Festive', price: 3599, tag: 'FESTIVE FAVOURITE', tone: '#e9d7bb', image: 'https://images.unsplash.com/photo-1610189012906-4c5c2bfa8b1e?auto=format&fit=crop&w=800&q=85' },
@@ -122,8 +142,53 @@ export class AppComponent {
     { id: 4, name: 'The Everyday Muse', category: 'Everyday', price: 1899, tag: 'EASY ELEGANCE', tone: '#deded0', image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=85' }
   ];
 
+  constructor(private readonly http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.loadProducts();
+  }
+
+  loadProducts(): void {
+    this.loadingProducts = true;
+    this.catalogueError = '';
+    let params = new HttpParams().set('limit', '24');
+    if (this.activeCategory !== 'All sarees') params = params.set('category', this.activeCategory);
+    this.http.get<{ items: ApiProduct[] }>(this.apiBase + '/products', { params }).subscribe({
+      next: (response) => {
+        if (Array.isArray(response.items) && response.items.length) {
+          this.sarees = response.items.map((product, index) => ({
+            id: index + 1,
+            slug: product.slug,
+            name: product.name,
+            category: product.category,
+            price: product.price,
+            tag: product.featured ? 'CURATED PICK' : 'MADE TO BE LOVED',
+            tone: '#e8d8c8',
+            image: product.imageUrl || ''
+          }));
+          this.apiConnected = true;
+        } else if (Array.isArray(response.items)) {
+          this.sarees = [];
+          this.apiConnected = true;
+        }
+        this.loadingProducts = false;
+      },
+      error: () => {
+        this.apiConnected = false;
+        this.catalogueError = 'We could not reach the live catalogue yet. Showing preview styles instead.';
+        this.loadingProducts = false;
+      }
+    });
+  }
+
   get filteredSarees(): Saree[] {
-    return this.activeCategory === 'All sarees' ? this.sarees : this.sarees.filter(s => s.category === this.activeCategory);
+    return this.sarees;
+  }
+
+  selectCategory(category: string): void {
+    this.activeCategory = category;
+    if (this.apiConnected) this.loadProducts();
+    else this.sarees = this.activeCategory === 'All sarees' ? this.sarees : this.sarees.filter(s => s.category === category);
   }
   get cartCount(): number { return this.cart.length; }
   get cartTotal(): number { return this.cart.reduce((sum, item) => sum + item.price, 0); }

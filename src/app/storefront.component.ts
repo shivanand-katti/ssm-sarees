@@ -114,7 +114,18 @@ type ApiProduct = {
         <div class="bag-line" *ngFor="let item of cart"><img [src]="item.image" [alt]="item.name"><div><b>{{ item.name }}</b><span>₹{{ item.price | number:'1.0-0' }}</span><button (click)="removeFromBag(item.id)">Remove</button></div></div>
         <div class="bag-total" *ngIf="cart.length"><span>Subtotal</span><b>₹{{ cartTotal | number:'1.0-0' }}</b></div>
         <button class="primary-button checkout-button" [disabled]="cart.length === 0" (click)="checkoutNotice()">Continue to checkout ↗</button>
-        <small class="catalogue-note">Demo cart only. Secure checkout will be connected after the API and payment setup.</small>
+        <form class="checkout-form" *ngIf="checkoutOpen" (submit)="startCheckout($event)">
+          <p class="eyebrow">DELIVERY DETAILS</p>
+          <label>Full name<input name="name" autocomplete="name" required maxlength="100"></label>
+          <label>Email<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+          <label>Phone<input name="phone" type="tel" autocomplete="tel" required maxlength="20"></label>
+          <label>Address<textarea name="address" autocomplete="street-address" required maxlength="500"></textarea></label>
+          <label>City<input name="city" autocomplete="address-level2" required maxlength="100"></label>
+          <label>State<input name="state" autocomplete="address-level1" required maxlength="100"></label>
+          <label>PIN code<input name="postalCode" inputmode="numeric" autocomplete="postal-code" required maxlength="12"></label>
+          <button class="primary-button checkout-button" type="submit" [disabled]="paymentBusy">{{ paymentBusy ? "Preparing payment…" : "Pay securely with Razorpay" }}</button>
+        </form>
+        <small class="catalogue-note">Checkout requires Razorpay test credentials on the API. Never use live keys before full testing.</small>
         <p *ngIf="checkoutMessage" class="success-message">{{ checkoutMessage }}</p>
       </aside>
     </div>
@@ -128,6 +139,8 @@ export class StorefrontComponent implements OnInit {
   subscribed = false;
   toast = '';
   checkoutMessage = '';
+  checkoutOpen = false;
+  paymentBusy = false;
   activeCategory = 'All sarees';
   loadingProducts = false;
   apiConnected = false;
@@ -210,6 +223,46 @@ export class StorefrontComponent implements OnInit {
     this.subscribed = true;
   }
   checkoutNotice(): void {
-    this.checkoutMessage = 'Checkout will be enabled after backend and payment integration.';
+    if (!this.apiConnected || this.cart.some(item => !item.productId)) {
+      this.checkoutMessage = 'Secure checkout is available once the live product API is connected.';
+      return;
+    }
+    this.checkoutOpen = !this.checkoutOpen;
+    this.checkoutMessage = '';
+  }
+
+  async startCheckout(event: Event): Promise<void> {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const values = Object.fromEntries(new FormData(form).entries());
+    const customer = { name: String(values['name'] || ''), email: String(values['email'] || ''), phone: String(values['phone'] || ''), address: String(values['address'] || ''), city: String(values['city'] || ''), state: String(values['state'] || ''), postalCode: String(values['postalCode'] || '') };
+    const quantities = new Map<string, number>();
+    for (const item of this.cart) if (item.productId) quantities.set(item.productId, (quantities.get(item.productId) || 0) + 1);
+    this.paymentBusy = true;
+    this.checkoutMessage = '';
+    try {
+      await this.loadRazorpayScript();
+      const created = await this.http.post<any>(this.apiBase + '/orders/create-payment', { customer, items: Array.from(quantities.entries()).map(([productId, quantity]) => ({ productId, quantity })) }).toPromise();
+      const RazorpayCtor = (window as any).Razorpay;
+      if (!RazorpayCtor || !created?.razorpayOrderId) throw new Error('Secure payment could not be initialized.');
+      const payment = new RazorpayCtor({ key: created.keyId, amount: created.amount, currency: created.currency, name: 'SSM Sarees', description: 'Order ' + created.orderNumber, order_id: created.razorpayOrderId, prefill: { name: customer.name, email: customer.email, contact: customer.phone }, theme: { color: '#681f32' },
+        handler: async (response: any) => {
+          try {
+            const verified = await this.http.post<any>(this.apiBase + '/orders/verify-payment', response).toPromise();
+            if (!verified?.success) throw new Error('Payment verification did not complete.');
+            this.cart = []; this.checkoutOpen = false; this.checkoutMessage = 'Payment confirmed. Order number: ' + verified.orderNumber + '.'; this.loadProducts();
+          } catch { this.checkoutMessage = 'Payment was submitted but confirmation could not be retrieved. Please contact support with your payment ID.'; }
+          finally { this.paymentBusy = false; }
+        },
+        modal: { ondismiss: () => { this.paymentBusy = false; } }
+      });
+      payment.on('payment.failed', (response: any) => { this.checkoutMessage = response?.error?.description || 'Payment did not complete. Please try again.'; this.paymentBusy = false; });
+      payment.open();
+    } catch (error: any) { this.checkoutMessage = error?.error?.error || error?.message || 'Could not start checkout. Please try again.'; this.paymentBusy = false; }
+  }
+
+  private loadRazorpayScript(): Promise<void> {
+    if ((window as any).Razorpay) return Promise.resolve();
+    return new Promise((resolve, reject) => { const script = document.createElement('script'); script.src = 'https://checkout.razorpay.com/v1/checkout.js'; script.onload = () => resolve(); script.onerror = () => reject(new Error('Could not load Razorpay checkout.')); document.head.appendChild(script); });
   }
 }

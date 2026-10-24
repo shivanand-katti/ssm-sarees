@@ -1,48 +1,42 @@
 # SSM Sarees
 
-Premium saree e-commerce application built by SR Tech.
+A premium saree storefront and store-management application by SR Tech.
 
-## Architecture
+## Current architecture
 
-- `frontend/storefront`: Angular customer storefront
-- `frontend/admin`: Angular administration dashboard
-- `backend`: Node.js, Express and MongoDB REST API
-- Free-tier-first deployment: Cloudflare Pages for Angular apps, Render for API, MongoDB Atlas free cluster where available
+- **Storefront:** Angular standalone components, responsive burgundy/ivory/gold design.
+- **Admin studio:** Angular route at `/admin`, JWT login, product creation/editing/archive.
+- **API:** Node.js, Express, Mongoose, MongoDB.
+- **Checkout API:** Razorpay order creation and server-side signature verification (test credentials only).
+- **CI:** GitHub Actions builds the Angular storefront on pushes and pull requests.
 
-## Planned capabilities
+## Implemented in this repository
 
-- Product catalogue, categories, search and filters
-- Product details, cart and checkout
-- Customer accounts and order history
-- Admin product, inventory and order management
-- Server-side validation, authentication and role-based access
-- Payment integration initially in sandbox/test mode
-- Automated tests and production deployment checklist
+- Product catalogue API with category/search/pagination support.
+- Repeatable MongoDB sample-product seeder.
+- Admin account bootstrap script, password hashing, JWT auth and role checks.
+- Protected admin product CRUD and order-list/cancel endpoints.
+- Server-calculated order totals, inventory checks, Razorpay order creation and payment signature verification.
+- Security headers and rate limits on authentication and checkout APIs.
+- Production environment file replacement for the storefront API origin.
 
-## Development status
+## Important status
 
-Repository bootstrap is in progress. Features and deployment will be added and verified incrementally. No production services are configured yet.
+The source code is committed, but it must pass the automated build and end-to-end checks before deployment. The production API URL is still a placeholder. The payment API needs MongoDB and Razorpay test credentials configured through the hosting provider's secret settings. The browser checkout interaction, full order operations, customer account features, and final live test remain to be completed/verified before treating this as a production-ready store.
 
-## Free deployment notes
-
-The goal is to run a portfolio/demo deployment on free tiers. Free plans may have sleep/usage, storage, bandwidth, or feature restrictions and can change over time. Never commit credentials. Configure environment variables through each hosting provider's dashboard. Do not process real customer payments until security, legal, privacy, order operations, and provider fees have been reviewed.
-
-## Proposed layout
+## Repository layout
 
 ```
-frontend/
-  storefront/
-  admin/
-backend/
-  src/
-    config/
-    middleware/
-    modules/
-    routes/
-  tests/
-docs/
+src/                    Angular storefront and admin studio
+server/src/             Express API, models, middleware and routes
+server/scripts/         Sample product seeder and admin bootstrap
+docs/                   Project plan and deployment notes
+.github/workflows/      CI build
 ```
 
-## Getting started
+## Security notes
 
-Node.js LTS and Angular CLI will be used for frontend development. The backend will use Node.js, Express, Mongoose and environment-based configuration. Setup instructions will be updated with each implementation milestone.
+- Never commit `.env`, database credentials, JWT secrets, or payment secrets.
+- Use Razorpay test mode until the entire payment flow is verified.
+- Do not accept browser-provided prices as authoritative; the API recalculates order totals from MongoDB.
+- A demo build is not a substitute for production security review, privacy/legal review, refund handling, delivery operations, monitoring, or backups.

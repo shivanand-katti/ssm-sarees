@@ -66,12 +66,21 @@ type AdminProduct = {
             </article>
           </div>
         </div>
+        <section class="orders-panel">
+          <div class="list-heading"><h2>Recent orders</h2><button class="admin-secondary" (click)="loadOrders()">Refresh orders</button></div>
+          <p class="muted" *ngIf="orders.length === 0">No orders to display yet.</p>
+          <article class="admin-order" *ngFor="let order of orders">
+            <div><b>{{ order.orderNumber }}</b><small>{{ order.customer?.name }} · {{ order.customer?.email }}</small><small>{{ order.createdAt | date:'medium' }}</small></div>
+            <div><b>₹{{ order.subtotal | number:'1.0-0' }}</b><small class="order-status">{{ order.status }}</small></div>
+            <button *ngIf="order.status === 'pending'" class="admin-secondary" (click)="cancelOrder(order)">Cancel pending</button>
+          </article>
+        </section>
       </section>
       <footer class="admin-footer">SSM Sarees · Store administration</footer>
     </main>
   `,
   styles: [`
-    :host{display:block;min-height:100vh;background:#faf7f1;color:#292321;font-family:Arial,sans-serif}.admin-shell{max-width:1240px;margin:auto;padding:0 28px}.admin-header{height:86px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e9e0d7}.admin-brand{font:24px Georgia,serif;letter-spacing:.06em;color:#681f32;text-decoration:none}.admin-brand em{font:11px Arial,sans-serif;letter-spacing:.15em}.admin-brand small{display:block;font:8px Arial,sans-serif;letter-spacing:.2em;margin-top:5px;color:#a27e4b}.back-link{font-size:12px;color:#681f32;text-decoration:none}.admin-login{max-width:430px;margin:80px auto;padding:38px;background:#fffdfa;border:1px solid #e9e0d7}.eyebrow{font-size:10px;letter-spacing:.18em;color:#b38b4c;font-weight:bold}.admin-login h1,.admin-title h1{font:48px Georgia,serif;color:#421321;margin:10px 0}.admin-login h1 i,.admin-title h1 i{color:#b38b4c;font-weight:normal}.admin-login p:not(.eyebrow){font-size:12px;line-height:1.8;color:#7b706c}.admin-login form,.product-editor{display:grid;gap:14px}.admin-shell label{display:grid;gap:6px;font-size:11px;color:#665750}.admin-shell input,.admin-shell select,.admin-shell textarea{width:100%;padding:11px;border:1px solid #ded3c8;background:#fffdfa;color:#292321;border-radius:0;font:12px Arial,sans-serif}.admin-primary,.admin-secondary,.admin-logout{border:1px solid #681f32;padding:12px 15px;font-size:11px;cursor:pointer}.admin-primary{background:#681f32;color:white}.admin-secondary,.admin-logout{background:transparent;color:#681f32}.admin-title{display:flex;align-items:center;justify-content:space-between;margin:38px 0 20px}.admin-title h1{font-size:42px;margin:0}.admin-layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:25px;align-items:start}.product-editor,.product-list{background:#fffdfa;border:1px solid #e9e0d7;padding:22px}.product-editor h2,.product-list h2{font:23px Georgia,serif;color:#421321;margin:0 0 6px}.admin-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.check-label{display:flex!important;align-items:center;grid-template-columns:16px 1fr;gap:9px!important}.check-label input{width:14px}.editor-actions,.list-heading{display:flex;gap:10px;align-items:center;justify-content:space-between}.list-heading{margin-bottom:15px}.admin-product{display:flex;gap:13px;align-items:center;padding:14px 0;border-bottom:1px solid #eee4da}.admin-product img{width:68px;height:86px;object-fit:cover;background:#e8d8c8}.admin-product-info{display:grid;gap:6px;flex:1;min-width:0}.admin-product-info b{font:16px Georgia,serif;color:#421321}.admin-product-info small{font-size:10px;color:#7b706c}.admin-product-info small.inactive{color:#9c3945}.admin-product-actions{display:grid;gap:8px}.admin-product-actions button{border:0;background:none;color:#681f32;font-size:10px;text-decoration:underline;cursor:pointer}.admin-message{font-size:12px;color:#39714b;line-height:1.7}.admin-message.error{color:#a02e3c}.muted{font-size:12px;color:#7b706c}.admin-footer{padding:30px 0;text-align:center;font-size:10px;color:#958780}@media(max-width:850px){.admin-layout{grid-template-columns:1fr}.admin-title h1{font-size:34px}}@media(max-width:500px){.admin-shell{padding:0 14px}.admin-login{margin:35px auto;padding:24px}.admin-product{align-items:flex-start;flex-wrap:wrap}.admin-product-info{min-width:calc(100% - 90px)}.admin-product-actions{margin-left:80px;display:flex}.admin-title{gap:12px}.admin-title h1{font-size:29px}}
+    :host{display:block;min-height:100vh;background:#faf7f1;color:#292321;font-family:Arial,sans-serif}.admin-shell{max-width:1240px;margin:auto;padding:0 28px}.admin-header{height:86px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e9e0d7}.admin-brand{font:24px Georgia,serif;letter-spacing:.06em;color:#681f32;text-decoration:none}.admin-brand em{font:11px Arial,sans-serif;letter-spacing:.15em}.admin-brand small{display:block;font:8px Arial,sans-serif;letter-spacing:.2em;margin-top:5px;color:#a27e4b}.back-link{font-size:12px;color:#681f32;text-decoration:none}.admin-login{max-width:430px;margin:80px auto;padding:38px;background:#fffdfa;border:1px solid #e9e0d7}.eyebrow{font-size:10px;letter-spacing:.18em;color:#b38b4c;font-weight:bold}.admin-login h1,.admin-title h1{font:48px Georgia,serif;color:#421321;margin:10px 0}.admin-login h1 i,.admin-title h1 i{color:#b38b4c;font-weight:normal}.admin-login p:not(.eyebrow){font-size:12px;line-height:1.8;color:#7b706c}.admin-login form,.product-editor{display:grid;gap:14px}.admin-shell label{display:grid;gap:6px;font-size:11px;color:#665750}.admin-shell input,.admin-shell select,.admin-shell textarea{width:100%;padding:11px;border:1px solid #ded3c8;background:#fffdfa;color:#292321;border-radius:0;font:12px Arial,sans-serif}.admin-primary,.admin-secondary,.admin-logout{border:1px solid #681f32;padding:12px 15px;font-size:11px;cursor:pointer}.admin-primary{background:#681f32;color:white}.admin-secondary,.admin-logout{background:transparent;color:#681f32}.admin-title{display:flex;align-items:center;justify-content:space-between;margin:38px 0 20px}.admin-title h1{font-size:42px;margin:0}.admin-layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:25px;align-items:start}.product-editor,.product-list{background:#fffdfa;border:1px solid #e9e0d7;padding:22px}.product-editor h2,.product-list h2{font:23px Georgia,serif;color:#421321;margin:0 0 6px}.admin-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.check-label{display:flex!important;align-items:center;grid-template-columns:16px 1fr;gap:9px!important}.check-label input{width:14px}.editor-actions,.list-heading{display:flex;gap:10px;align-items:center;justify-content:space-between}.list-heading{margin-bottom:15px}.admin-product{display:flex;gap:13px;align-items:center;padding:14px 0;border-bottom:1px solid #eee4da}.admin-product img{width:68px;height:86px;object-fit:cover;background:#e8d8c8}.admin-product-info{display:grid;gap:6px;flex:1;min-width:0}.admin-product-info b{font:16px Georgia,serif;color:#421321}.admin-product-info small{font-size:10px;color:#7b706c}.admin-product-info small.inactive{color:#9c3945}.admin-product-actions{display:grid;gap:8px}.admin-product-actions button{border:0;background:none;color:#681f32;font-size:10px;text-decoration:underline;cursor:pointer}.admin-message{font-size:12px;color:#39714b;line-height:1.7}.admin-message.error{color:#a02e3c}.muted{font-size:12px;color:#7b706c}.orders-panel{margin-top:25px;background:#fffdfa;border:1px solid #e9e0d7;padding:22px}.admin-order{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid #eee4da}.admin-order>div{display:grid;gap:6px}.admin-order b{font:14px Georgia,serif;color:#421321}.admin-order small{font-size:10px;color:#7b706c}.order-status{text-transform:uppercase;letter-spacing:.1em}.admin-footer{padding:30px 0;text-align:center;font-size:10px;color:#958780}@media(max-width:850px){.admin-layout{grid-template-columns:1fr}.admin-title h1{font-size:34px}}@media(max-width:500px){.admin-shell{padding:0 14px}.admin-login{margin:35px auto;padding:24px}.admin-product{align-items:flex-start;flex-wrap:wrap}.admin-product-info{min-width:calc(100% - 90px)}.admin-product-actions{margin-left:80px;display:flex}.admin-title{gap:12px}.admin-title h1{font-size:29px}}
   `]
 })
 export class AdminComponent {
@@ -83,12 +92,13 @@ export class AdminComponent {
   message = '';
   isError = false;
   products: AdminProduct[] = [];
+  orders: any[] = [];
   categories = ['Silk', 'Festive', 'Everyday', 'Cotton', 'Designer'];
   fallbackImage = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80';
   form: AdminProduct = this.emptyForm();
 
   constructor(private readonly http: HttpClient) {
-    if (this.token) this.loadProducts();
+    if (this.token) { this.loadProducts(); this.loadOrders(); }
   }
 
   private emptyForm(): AdminProduct {
@@ -121,7 +131,7 @@ export class AdminComponent {
 
   loadProducts(): void {
     this.http.get<{ items: AdminProduct[] }>(this.apiBase + '/admin/products', { headers: this.headers() }).subscribe({
-      next: (response) => { this.products = response.items || []; this.message = ''; this.isError = false; this.busy = false; },
+      next: (response) => { this.products = response.items || []; this.message = ''; this.isError = false; this.busy = false; this.loadOrders(); },
       error: (error) => {
         if (error.status === 401 || error.status === 403) this.logout();
         this.message = error?.error?.error || 'Could not load products.';
@@ -153,6 +163,27 @@ export class AdminComponent {
     this.http.delete(this.apiBase + '/admin/products/' + product._id, { headers: this.headers() }).subscribe({
       next: () => { this.message = 'Product archived.'; this.isError = false; this.loadProducts(); },
       error: (error) => { this.message = error?.error?.error || 'Could not archive product.'; this.isError = true; }
+    });
+  }
+
+
+  loadOrders(): void {
+    if (!this.token) return;
+    this.http.get<{ items: any[] }>(this.apiBase + '/admin/orders?limit=25', { headers: this.headers() }).subscribe({
+      next: (response) => { this.orders = response.items || []; },
+      error: (error) => {
+        if (error.status === 401 || error.status === 403) this.logout();
+        this.message = error?.error?.error || 'Could not load orders.';
+        this.isError = true;
+      }
+    });
+  }
+
+  cancelOrder(order: any): void {
+    if (!order?._id || !window.confirm('Cancel pending order ' + order.orderNumber + '?')) return;
+    this.http.patch(this.apiBase + '/admin/orders/' + order._id + '/status', { status: 'cancelled' }, { headers: this.headers() }).subscribe({
+      next: () => { this.message = 'Order cancelled.'; this.isError = false; this.loadOrders(); },
+      error: (error) => { this.message = error?.error?.error || 'Could not cancel order.'; this.isError = true; }
     });
   }
 

@@ -1,0 +1,32 @@
+name: Seed SSM Sarees Catalogue
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    name: Seed sample catalogue into MongoDB Atlas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install API dependencies
+        working-directory: server
+        run: npm install
+      - name: Seed catalogue products
+        working-directory: server
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        run: |
+          if [ -z "$MONGODB_URI" ]; then
+            echo "Missing repository secret MONGODB_URI. Add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          npm run seed

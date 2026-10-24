@@ -21,7 +21,7 @@ const products = [
     category: 'Cotton',
     price: 4290,
     compareAtPrice: 4990,
-    imageUrl: 'https://images.unsplash.com/photo-1583391733956-6c78276477e3?auto=format&fit=crop&w=1000&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=85',
     inventory: 12,
     featured: true
   },
@@ -41,7 +41,7 @@ const products = [
     description: 'A modern occasion saree with a deep blue palette for a polished, contemporary look.',
     category: 'Designer',
     price: 7490,
-    imageUrl: 'https://images.unsplash.com/photo-1610189012906-4c7f4c1b2a5d?auto=format&fit=crop&w=1000&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=1000&q=85',
     inventory: 5,
     featured: false
   },
@@ -51,7 +51,7 @@ const products = [
     description: 'A comfortable cotton saree in a warm marigold tone for easy everyday elegance.',
     category: 'Everyday',
     price: 1890,
-    imageUrl: 'https://images.unsplash.com/photo-1610030469668-8e9f641aaf5c?auto=format&fit=crop&w=1000&q=85',
+    imageUrl: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=1000&q=85',
     inventory: 18,
     featured: false
   },

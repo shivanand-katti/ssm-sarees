@@ -235,8 +235,8 @@ export class StorefrontComponent implements OnInit {
   async startCheckout(event: Event): Promise<void> {
     event.preventDefault();
     const form = event.target as HTMLFormElement;
-    const values = Object.fromEntries(new FormData(form).entries());
-    const customer = { name: String(values['name'] || ''), email: String(values['email'] || ''), phone: String(values['phone'] || ''), address: String(values['address'] || ''), city: String(values['city'] || ''), state: String(values['state'] || ''), postalCode: String(values['postalCode'] || '') };
+    const values = new FormData(form);
+    const customer = { name: String(values.get('name') || ''), email: String(values.get('email') || ''), phone: String(values.get('phone') || ''), address: String(values.get('address') || ''), city: String(values.get('city') || ''), state: String(values.get('state') || ''), postalCode: String(values.get('postalCode') || '') };
     const quantities = new Map<string, number>();
     for (const item of this.cart) if (item.productId) quantities.set(item.productId, (quantities.get(item.productId) || 0) + 1);
     this.paymentBusy = true;

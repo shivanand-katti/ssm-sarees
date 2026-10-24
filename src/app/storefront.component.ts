@@ -155,6 +155,7 @@ export class StorefrontComponent implements OnInit {
     { id: 3, name: 'The Rosewood Classic', category: 'Silk', price: 5199, tag: 'TIMELESS', tone: '#ead8d5', image: 'https://images.unsplash.com/photo-1583391733956-6c78276477e4?auto=format&fit=crop&w=800&q=85' },
     { id: 4, name: 'The Everyday Muse', category: 'Everyday', price: 1899, tag: 'EASY ELEGANCE', tone: '#deded0', image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=85' }
   ];
+  private readonly previewCatalogue: Saree[] = this.sarees.map((item) => ({ ...item }));
 
   constructor(private readonly http: HttpClient) {}
 
@@ -203,7 +204,7 @@ export class StorefrontComponent implements OnInit {
   selectCategory(category: string): void {
     this.activeCategory = category;
     if (this.apiConnected) this.loadProducts();
-    else this.sarees = this.activeCategory === 'All sarees' ? this.sarees : this.sarees.filter(s => s.category === category);
+    else this.sarees = this.activeCategory === 'All sarees' ? this.previewCatalogue.map((item) => ({ ...item })) : this.previewCatalogue.filter(s => s.category === category);
   }
   get cartCount(): number { return this.cart.length; }
   get cartTotal(): number { return this.cart.reduce((sum, item) => sum + item.price, 0); }

@@ -43,7 +43,7 @@ type ApiProduct = {
         <a href="#story" (click)="menuOpen = false">Our Story</a>
         <a href="#promise" (click)="menuOpen = false">Our Promise</a>
       </nav>
-      <button class="bag-button" (click)="showBag = !showBag" [attr.aria-label]="'Shopping bag, ' + cartCount + ' items">
+      <button class="bag-button" (click)="showBag = !showBag" [attr.aria-label]="'Shopping bag, ' + cartCount + ' items'">
         Bag <span class="bag-count">{{ cartCount }}</span>
       </button>
     </header>
@@ -86,7 +86,7 @@ type ApiProduct = {
             <div class="product-image" [style.background]="saree.tone">
               <img [src]="saree.image" [alt]="saree.name" loading="lazy">
               <span class="product-tag">{{ saree.tag }}</span>
-              <button class="quick-add" (click)="addToBag(saree)" [attr.aria-label]="'Add ' + saree.name + ' to bag">+</button>
+              <button class="quick-add" (click)="addToBag(saree)" [attr.aria-label]="'Add ' + saree.name + ' to bag'">+</button>
             </div>
             <div class="product-meta"><span>{{ saree.category }}</span><span>✦ Curated pick</span></div>
             <h3>{{ saree.name }}</h3>
